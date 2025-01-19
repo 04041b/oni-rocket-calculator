@@ -1,4 +1,7 @@
 # Define constants for fuel and oxidizer properties
+import math
+
+
 FUEL_EFFICIENCY = {
     "steam": 20,          # km/kg
     "petroleum": 40,      # km/kg
@@ -35,30 +38,42 @@ COMPONENT_WEIGHTS = {
     "research_station": 200     # kg
 }
 
+
+
+def calculate_total_weight(fuel_type, fuel_weight, extra_components=[]):
+    # Calculate weights of fuel and oxidizer
+    fuel_and_oxidizer_weight = fuel_weight *2
+    num_fuel_tanks = math.ceil(fuel_weight/FUEL_STORAGE_CAPACITY)
+    num_oxidizer_tanks = math.ceil(fuel_weight/OXIDIZER_STORAGE_CAPACITY)
+
+    # Calculate weights of storage
+    fuel_storage_weight = num_fuel_tanks * FUEL_STORAGE_WEIGHT
+    oxidizer_storage_weight = num_oxidizer_tanks * OXIDIZER_STORAGE_WEIGHT
+
+    # Engine and capsule weights
+    engine_weight = ENGINE_WEIGHT[fuel_type]
+    capsule_weight = COMMAND_CAPSULE_WEIGHT
+
+    # Calculate extra components weight
+    extra_components_weight = sum(COMPONENT_WEIGHTS[component] for component in extra_components)
+
+    # Total weight
+    total_weight = (fuel_and_oxidizer_weight + fuel_storage_weight + 
+                    oxidizer_storage_weight + engine_weight + capsule_weight + extra_components_weight)
+
+    return total_weight
+
 def calculate_weight_penalty(ship_weight):
     return max(ship_weight, (ship_weight / 300) ** 3.2)
 
 
+def calculate_viable_distance(distance, fuel_type, oxidizer_type, ship_weight):
+    return
 
-# Function to calculate fuel needed for a given distance
-def calculate_fuel_needed(distance, fuel_type, oxidizer_type, weight):
-    fuel_efficiency = FUEL_EFFICIENCY[fuel_type]
-    oxidizer_efficiency = OXIDIZER_EFFICIENCY[oxidizer_type]
-    
-    # Effective efficiency with oxidizer
-    effective_efficiency_w_LQ = fuel_efficiency * oxidizer_efficiency
+print("Total Weight:", calculate_total_weight("petroleum", 208))
 
-    # Calculate total fuel required
-    total_fuel_needed = distance / effective_efficiency_w_LQ
+# viable_distance = calculate_viable_distance(50000, "petroleum", "liquid_oxygen",calculate_total_weight("petroleum", 1, 1, []))
+# print("Fuel Needed for 50,000km:", viable_distance)
 
 
-    # Calculate fuel and oxidizer amounts (1:1 ratio)
-    total_oxidizer_needed = total_fuel_needed
 
-    return {
-        "total_fuel_needed": total_fuel_needed,  # kg
-        "total_oxidizer_needed": total_oxidizer_needed # kg
-    }
-
-fuel_needed = calculate_fuel_needed(50000, "petroleum", "liquid_oxygen")
-print("Fuel Needed for 50,000km:", fuel_needed)
