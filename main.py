@@ -35,6 +35,30 @@ COMPONENT_WEIGHTS = {
     "research_station": 200     # kg
 }
 
+def calculate_weight_penalty(ship_weight):
+    return max(ship_weight, (ship_weight / 300) ** 3.2)
 
 
-wanted_distance = input("wanted distance")
+
+# Function to calculate fuel needed for a given distance
+def calculate_fuel_needed(distance, fuel_type, oxidizer_type, weight):
+    fuel_efficiency = FUEL_EFFICIENCY[fuel_type]
+    oxidizer_efficiency = OXIDIZER_EFFICIENCY[oxidizer_type]
+    
+    # Effective efficiency with oxidizer
+    effective_efficiency_w_LQ = fuel_efficiency * oxidizer_efficiency
+
+    # Calculate total fuel required
+    total_fuel_needed = distance / effective_efficiency_w_LQ
+
+
+    # Calculate fuel and oxidizer amounts (1:1 ratio)
+    total_oxidizer_needed = total_fuel_needed
+
+    return {
+        "total_fuel_needed": total_fuel_needed,  # kg
+        "total_oxidizer_needed": total_oxidizer_needed # kg
+    }
+
+fuel_needed = calculate_fuel_needed(50000, "petroleum", "liquid_oxygen")
+print("Fuel Needed for 50,000km:", fuel_needed)
