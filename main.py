@@ -67,10 +67,16 @@ def calculate_weight_penalty(ship_weight):
     return max(ship_weight, (ship_weight / 300) ** 3.2)
 
 
-def calculate_viable_distance(distance, fuel_type, oxidizer_type, ship_weight):
-    return
+def calculate_viable_distance(fuel_type, oxidizer_type, ship_weight, amount_fuel):
+    penalty = calculate_weight_penalty(ship_weight)
+    only_fuel_distance = amount_fuel * FUEL_EFFICIENCY[fuel_type] * OXIDIZER_EFFICIENCY[oxidizer_type]
+    viable_distance = only_fuel_distance - penalty
+    return viable_distance
 
-print("Total Weight:", calculate_total_weight("petroleum", 208))
+fuel_amount = 2017
+print("Total Weight:", calculate_total_weight("petroleum", fuel_amount))
+viable_distance = calculate_viable_distance("petroleum", "liquid_oxygen", calculate_total_weight("petroleum", fuel_amount),fuel_amount)
+print(viable_distance)
 
 # viable_distance = calculate_viable_distance(50000, "petroleum", "liquid_oxygen",calculate_total_weight("petroleum", 1, 1, []))
 # print("Fuel Needed for 50,000km:", viable_distance)
