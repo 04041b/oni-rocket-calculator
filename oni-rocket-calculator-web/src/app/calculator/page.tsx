@@ -1,6 +1,6 @@
 'use client';
 
-import { loadPyodide } from 'pyodide';
+
 import { useState } from "react";
 const calculate = async (fuel: number) => {
     // Add your calculation logic here
@@ -9,8 +9,7 @@ const calculate = async (fuel: number) => {
 };
 
 
-export default async function calculator() {
-    const pyodide = await loadPyodide();
+export default function Calculator() {
     const [fuel, set_fuel] = useState(0);
     return (
     <div className="flex flex-col items-center justify-center min-h-screen">
@@ -28,7 +27,6 @@ export default async function calculator() {
         <button
             className="px-4 py-2 text-white bg-blue-500 rounded-md shadow-md hover:bg-blue-600"
             onClick={() => calculate(fuel)}></button>
-
 
     </div>
     );
