@@ -4,39 +4,184 @@ import { useEffect } from "react";
 
 export default function Calculator() {
     useEffect(() => {
-        // Load PyScript
-        const pyScriptCSS = document.createElement('link');
-        pyScriptCSS.rel = 'stylesheet';
-        pyScriptCSS.href = 'https://pyscript.net/releases/2024.1.1/core.css';
-        document.head.appendChild(pyScriptCSS);
-
-        const pyScriptJS = document.createElement('script');
-        pyScriptJS.type = 'module';
-        pyScriptJS.src = 'https://pyscript.net/releases/2024.1.1/core.js';
-        document.head.appendChild(pyScriptJS);
-
         // Load Chart.js
         const chartJS = document.createElement('script');
         chartJS.src = 'https://cdn.jsdelivr.net/npm/chart.js';
         document.head.appendChild(chartJS);
 
-        // Initialize PyScript configuration and code after libraries load
-        const initializePyScript = () => {
-            // Create py-config element
-            const pyConfig = document.createElement('py-config');
-            pyConfig.textContent = '';
-            document.body.appendChild(pyConfig);
-
-            // Create py-script element with the Python code
-            const pyScript = document.createElement('py-script');
-            pyScript.textContent = `
-import micropip
-await micropip.install(["matplotlib", "numpy"])
-
+        // Initialize Pyodide configuration and code after libraries load
+        const initializePyodide = () => {
+            // Load Pyodide directly instead of PyScript
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.textContent = `
+                import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.mjs";
+                
+                async function main() {
+                    window.pyodide = await loadPyodide();
+                    
+                    // Load micropip
+                    await window.pyodide.loadPackage("micropip");
+                    
+                    // Install packages
+                    await window.pyodide.runPythonAsync(\`
+                        import micropip
+                        await micropip.install(["matplotlib", "numpy"])
+                    \`);
+                    
+                    // Create JavaScript function for chart generation
+                    window.createChart = function(fuelData, distanceData, currentFuel) {
+                        // Wait for Chart.js to be available
+                        if (typeof Chart === 'undefined') {
+                            setTimeout(() => window.createChart(fuelData, distanceData, currentFuel), 100);
+                            return;
+                        }
+                        
+                        // Create chart container
+                        const chartContainer = document.getElementById("chart");
+                        if (!chartContainer) return;
+                        
+                        chartContainer.innerHTML = '<canvas id="fuel-distance-chart" width="800" height="400" class="w-full"></canvas>';
+                        
+                        const ctx = document.getElementById('fuel-distance-chart');
+                        if (!ctx) return;
+                        
+                        const context = ctx.getContext('2d');
+                        
+                        // Destroy existing chart if it exists
+                        if (window.fuelChart) {
+                            window.fuelChart.destroy();
+                        }
+                        
+                        // Create datasets
+                        const chartData = fuelData.map((fuel, index) => ({
+                            x: fuel,
+                            y: distanceData[index]
+                        }));
+                        
+                        window.fuelChart = new Chart(context, {
+                            type: 'line',
+                            data: {
+                                datasets: [{
+                                    label: 'Viable Distance',
+                                    data: chartData,
+                                    borderColor: 'rgb(37, 99, 235)',
+                                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                                    borderWidth: 3,
+                                    pointBackgroundColor: 'rgb(37, 99, 235)',
+                                    pointBorderColor: 'rgb(37, 99, 235)',
+                                    pointRadius: 4,
+                                    pointHoverRadius: 8,
+                                    tension: 0.1,
+                                    fill: false
+                                }, {
+                                    label: 'Current Fuel',
+                                    data: [{x: currentFuel, y: 0}, {x: currentFuel, y: Math.max(...distanceData)}],
+                                    borderColor: 'rgb(34, 197, 94)',
+                                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5],
+                                    pointRadius: 0,
+                                    fill: false,
+                                    tension: 0
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                interaction: {
+                                    intersect: false,
+                                    mode: 'index'
+                                },
+                                plugins: {
+                                    title: {
+                                        display: true,
+                                        text: 'Fuel Amount vs Viable Distance',
+                                        font: {
+                                            size: 18,
+                                            weight: 'bold'
+                                        }
+                                    },
+                                    legend: {
+                                        display: true,
+                                        position: 'top'
+                                    },
+                                    tooltip: {
+                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                        titleColor: 'white',
+                                        bodyColor: 'white',
+                                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                                        borderWidth: 1,
+                                        callbacks: {
+                                            label: function(context) {
+                                                if (context.datasetIndex === 0) {
+                                                    return 'Fuel: ' + context.parsed.x.toLocaleString() + ' kg, Distance: ' + Math.round(context.parsed.y).toLocaleString() + ' km';
+                                                }
+                                                return null;
+                                            },
+                                            title: function(context) {
+                                                return 'Rocket Performance';
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        type: 'linear',
+                                        display: true,
+                                        title: {
+                                            display: true,
+                                            text: 'Fuel Amount (kg)',
+                                            font: {
+                                                size: 14,
+                                                weight: 'bold'
+                                            }
+                                        },
+                                        ticks: {
+                                            callback: function(value) {
+                                                return value.toLocaleString();
+                                            }
+                                        },
+                                        grid: {
+                                            color: 'rgba(0, 0, 0, 0.1)'
+                                        }
+                                    },
+                                    y: {
+                                        type: 'linear',
+                                        display: true,
+                                        title: {
+                                            display: true,
+                                            text: 'Distance (km)',
+                                            font: {
+                                                size: 14,
+                                                weight: 'bold'
+                                            }
+                                        },
+                                        ticks: {
+                                            callback: function(value) {
+                                                return Math.round(value).toLocaleString();
+                                            }
+                                        },
+                                        grid: {
+                                            color: 'rgba(0, 0, 0, 0.1)'
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    };
+                    
+                    // Now run the main calculator code
+                    window.pyodide.runPython(\`
 import math
-from js import document, console, setTimeout
 import matplotlib.pyplot as plt
 import matplotlib
+matplotlib.use('Agg')
+import numpy as np
+import base64
+import io
+from js import document, console, setTimeout
+from pyodide.ffi import create_proxy
 matplotlib.use('Agg')
 import numpy as np
 import base64
@@ -188,155 +333,9 @@ def generate_chart(fuel_type, oxidizer_type, component_quantities, current_fuel)
             distance = calculate_viable_distance(fuel_type, oxidizer_type, weight, fuel)
             distances.append(max(0, distance))
         
-        # Create Chart.js interactive chart
-        chart_html = f"""
-        <div class="relative">
-            <canvas id="fuel-distance-chart" width="800" height="400" class="w-full"></canvas>
-        </div>
-        
-        <script>
-        (function() {{
-            // Wait for Chart.js to be available
-            if (typeof Chart === 'undefined') {{
-                setTimeout(arguments.callee, 100);
-                return;
-            }}
-            
-            const ctx = document.getElementById('fuel-distance-chart');
-            if (!ctx) return;
-            
-            const context = ctx.getContext('2d');
-            
-            // Destroy existing chart if it exists
-            if (window.fuelChart) {{
-                window.fuelChart.destroy();
-            }}
-            
-            const fuelData = {fuel_range};
-            const distanceData = {distances};
-            const currentFuel = {current_fuel};
-            
-            // Create datasets
-            const chartData = fuelData.map((fuel, index) => ({{
-                x: fuel,
-                y: distanceData[index]
-            }}));
-            
-            window.fuelChart = new Chart(context, {{
-                type: 'line',
-                data: {{
-                    datasets: [{{
-                        label: 'Viable Distance',
-                        data: chartData,
-                        borderColor: 'rgb(37, 99, 235)',
-                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                        borderWidth: 3,
-                        pointBackgroundColor: 'rgb(37, 99, 235)',
-                        pointBorderColor: 'rgb(37, 99, 235)',
-                        pointRadius: 4,
-                        pointHoverRadius: 8,
-                        tension: 0.1,
-                        fill: false
-                    }}, {{
-                        label: 'Current Fuel',
-                        data: [{{x: currentFuel, y: 0}}, {{x: currentFuel, y: Math.max(...distanceData)}}],
-                        borderColor: 'rgb(34, 197, 94)',
-                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                        borderWidth: 2,
-                        borderDash: [5, 5],
-                        pointRadius: 0,
-                        fill: false,
-                        tension: 0
-                    }}]
-                }},
-                options: {{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {{
-                        intersect: false,
-                        mode: 'index'
-                    }},
-                    plugins: {{
-                        title: {{
-                            display: true,
-                            text: 'Fuel Amount vs Viable Distance',
-                            font: {{
-                                size: 18,
-                                weight: 'bold'
-                            }}
-                        }},
-                        legend: {{
-                            display: true,
-                            position: 'top'
-                        }},
-                        tooltip: {{
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: 'white',
-                            bodyColor: 'white',
-                            borderColor: 'rgba(255, 255, 255, 0.1)',
-                            borderWidth: 1,
-                            callbacks: {{
-                                label: function(context) {{
-                                    if (context.datasetIndex === 0) {{
-                                        return 'Fuel: ' + context.parsed.x.toLocaleString() + ' kg, Distance: ' + Math.round(context.parsed.y).toLocaleString() + ' km';
-                                    }}
-                                    return null;
-                                }},
-                                title: function(context) {{
-                                    return 'Rocket Performance';
-                                }}
-                            }}
-                        }}
-                    }},
-                    scales: {{
-                        x: {{
-                            type: 'linear',
-                            display: true,
-                            title: {{
-                                display: true,
-                                text: 'Fuel Amount (kg)',
-                                font: {{
-                                    size: 14,
-                                    weight: 'bold'
-                                }}
-                            }},
-                            ticks: {{
-                                callback: function(value) {{
-                                    return value.toLocaleString();
-                                }}
-                            }},
-                            grid: {{
-                                color: 'rgba(0, 0, 0, 0.1)'
-                            }}
-                        }},
-                        y: {{
-                            type: 'linear',
-                            display: true,
-                            title: {{
-                                display: true,
-                                text: 'Distance (km)',
-                                font: {{
-                                    size: 14,
-                                    weight: 'bold'
-                                }}
-                            }},
-                            ticks: {{
-                                callback: function(value) {{
-                                    return Math.round(value).toLocaleString();
-                                }}
-                            }},
-                            grid: {{
-                                color: 'rgba(0, 0, 0, 0.1)'
-                            }}
-                        }}
-                    }}
-                }}
-            }});
-        }})();
-        </script>
-        """
-        
-        document.getElementById("chart").innerHTML = chart_html
+        # Call JavaScript function to create chart
+        from js import createChart
+        createChart(fuel_range, distances, current_fuel)
         
     except Exception as e:
         console.log(f"Error generating chart: {e}")
@@ -372,17 +371,19 @@ def initialize():
 
 # Run initialization
 initialize()
+                    \`);
+                }
+                
+                main().catch(console.error);
             `;
-            document.body.appendChild(pyScript);
+            document.body.appendChild(script);
         };
 
-        // Wait for PyScript to be available, then initialize
-        setTimeout(initializePyScript, 1000);
+        // Wait for Chart.js to be available, then initialize
+        setTimeout(initializePyodide, 1000);
 
         return () => {
             // Cleanup
-            document.head.removeChild(pyScriptCSS);
-            document.head.removeChild(pyScriptJS);
             document.head.removeChild(chartJS);
         };
     }, []);
