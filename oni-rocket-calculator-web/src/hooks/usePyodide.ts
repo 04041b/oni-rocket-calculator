@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { loadPyodide } from 'pyodide';
+import { loadPyodide, PyodideInterface } from 'pyodide';
 import { createChart } from '@/utils/chartUtils';
 import { pythonCalculatorCode } from '@/utils/pythonCalculator';
 
 export function usePyodide() {
-    const [pyodide, setPyodide] = useState<any>(null);
+    const [pyodide, setPyodide] = useState<PyodideInterface | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +26,7 @@ export function usePyodide() {
                 `);
                 
                 // Make chart creation function available to Python
-                (window as any).createChart = createChart;
+                (globalThis as unknown as { createChart: typeof createChart }).createChart = createChart;
                 
                 // Run the main calculator code
                 pyodideInstance.runPython(pythonCalculatorCode);

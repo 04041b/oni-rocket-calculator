@@ -1,7 +1,13 @@
-import { Chart, registerables } from 'chart.js';
+import { Chart, registerables, TooltipItem, ChartConfiguration } from 'chart.js';
 
 // Register Chart.js components
 Chart.register(...registerables);
+
+declare global {
+    interface Window {
+        fuelChart?: Chart;
+    }
+}
 
 export function createChart(fuelData: number[], distanceData: number[], currentFuel: number) {
     // Create chart container
@@ -17,8 +23,8 @@ export function createChart(fuelData: number[], distanceData: number[], currentF
     if (!context) return;
     
     // Destroy existing chart if it exists
-    if ((window as any).fuelChart) {
-        (window as any).fuelChart.destroy();
+    if (window.fuelChart) {
+        window.fuelChart.destroy();
     }
     
     // Create datasets
@@ -27,7 +33,7 @@ export function createChart(fuelData: number[], distanceData: number[], currentF
         y: distanceData[index]
     }));
     
-    (window as any).fuelChart = new Chart(context, {
+    const chartConfig: ChartConfiguration = {
         type: 'line',
         data: {
             datasets: [{
@@ -81,13 +87,13 @@ export function createChart(fuelData: number[], distanceData: number[], currentF
                     borderColor: 'rgba(255, 255, 255, 0.1)',
                     borderWidth: 1,
                     callbacks: {
-                        label: function(context: any) {
+                        label: function(context: TooltipItem<'line'>) {
                             if (context.datasetIndex === 0) {
                                 return 'Fuel: ' + context.parsed.x.toLocaleString() + ' kg, Distance: ' + Math.round(context.parsed.y).toLocaleString() + ' km';
                             }
                             return null;
                         },
-                        title: function(context: any) {
+                        title: function(context: TooltipItem<'line'>[]) {
                             return 'Rocket Performance';
                         }
                     }
@@ -106,8 +112,8 @@ export function createChart(fuelData: number[], distanceData: number[], currentF
                         }
                     },
                     ticks: {
-                        callback: function(value: any) {
-                            return value.toLocaleString();
+                        callback: function(value: string | number) {
+                            return Number(value).toLocaleString();
                         }
                     },
                     grid: {
@@ -126,8 +132,8 @@ export function createChart(fuelData: number[], distanceData: number[], currentF
                         }
                     },
                     ticks: {
-                        callback: function(value: any) {
-                            return Math.round(value).toLocaleString();
+                        callback: function(value: string | number) {
+                            return Math.round(Number(value)).toLocaleString();
                         }
                     },
                     grid: {
@@ -136,5 +142,7 @@ export function createChart(fuelData: number[], distanceData: number[], currentF
                 }
             }
         }
-    });
+    };
+    
+    window.fuelChart = new Chart(context, chartConfig);
 }
