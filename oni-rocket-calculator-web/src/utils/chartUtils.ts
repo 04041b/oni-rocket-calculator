@@ -87,13 +87,13 @@ export function createChart(fuelData: number[], distanceData: number[], currentF
                     borderColor: 'rgba(255, 255, 255, 0.1)',
                     borderWidth: 1,
                     callbacks: {
-                        label: function(context: TooltipItem<'line'>) {
+                        label: function(context: TooltipItem<'line'>): string | void {
                             if (context.datasetIndex === 0) {
                                 return 'Fuel: ' + context.parsed.x.toLocaleString() + ' kg, Distance: ' + Math.round(context.parsed.y).toLocaleString() + ' km';
                             }
-                            return null;
+                            return;
                         },
-                        title: function(context: TooltipItem<'line'>[]) {
+                        title: function(context: TooltipItem<'line'>[]): string {
                             return 'Rocket Performance';
                         }
                     }
