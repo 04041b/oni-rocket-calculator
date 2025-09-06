@@ -23,9 +23,7 @@ permissions:
 concurrency:
   group: "pages"
   cancel-in-progress: false
-defaults:
- run:
-  working-directory: ./oni-rocket-calculator-web
+
 jobs:
   # Build job
   build:
@@ -33,6 +31,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: change dir
+        run: cd oni-rocket-calculator-web
       - name: Detect package manager
         id: detect-package-manager
         run: |
