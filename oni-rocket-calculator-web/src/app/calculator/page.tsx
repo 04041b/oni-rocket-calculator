@@ -15,169 +15,26 @@ export default function Calculator() {
         pyScriptJS.src = 'https://pyscript.net/releases/2024.1.1/core.js';
         document.head.appendChild(pyScriptJS);
 
-        return () => {
-            // Cleanup
-            document.head.removeChild(pyScriptCSS);
-            document.head.removeChild(pyScriptJS);
-        };
-    }, []);
+        // Load Chart.js
+        const chartJS = document.createElement('script');
+        chartJS.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        document.head.appendChild(chartJS);
 
-    return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-6xl mx-auto px-4">
-                <h1 className="text-4xl font-bold text-center mb-8 text-gray-900">ONI Rocket Calculator (PyScript)</h1>
-                
-                <div className="bg-white rounded-lg shadow-lg p-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Left Column - Inputs */}
-                        <div className="space-y-6">
-                            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Rocket Configuration</h2>
-                            
-                            {/* Fuel Amount */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Amount of Fuel (kg)
-                                </label>
-                                <input
-                                    type="number"
-                                    id="fuel-amount"
-                                    defaultValue="1000"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black"
-                                    placeholder="Enter amount of fuel"
-                                />
-                            </div>
+        // Initialize PyScript configuration and code after libraries load
+        const initializePyScript = () => {
+            // Create py-config element
+            const pyConfig = document.createElement('py-config');
+            pyConfig.textContent = '';
+            document.body.appendChild(pyConfig);
 
-                            {/* Fuel Type */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Fuel Type
-                                </label>
-                                <select
-                                    id="fuel-type"
-                                    defaultValue="petroleum"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black"
-                                >
-                                    <option value="steam">Steam (20 km/kg)</option>
-                                    <option value="petroleum">Petroleum (40 km/kg)</option>
-                                    <option value="liquid_hydrogen">Liquid Hydrogen (60 km/kg)</option>
-                                </select>
-                            </div>
+            // Create py-script element with the Python code
+            const pyScript = document.createElement('py-script');
+            pyScript.textContent = `
+import micropip
+await micropip.install(["matplotlib", "numpy"])
 
-                            {/* Oxidizer Type */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Oxidizer Type
-                                </label>
-                                <select
-                                    id="oxidizer-type"
-                                    defaultValue="liquid_oxygen"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black"
-                                >
-                                    <option value="oxylite">Oxylite (100% efficiency)</option>
-                                    <option value="liquid_oxygen">Liquid Oxygen (133% efficiency)</option>
-                                </select>
-                            </div>
-
-                            {/* Extra Components */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Extra Modules (Quantity)
-                                </label>
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-sm text-gray-700 flex-1">Cargo Bay (2000 kg each)</label>
-                                        <input type="number" min="0" defaultValue="0" id="cargo-bay" className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md text-black text-sm" />
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-sm text-gray-700 flex-1">Liquid Cargo Bay (2000 kg each)</label>
-                                        <input type="number" min="0" defaultValue="0" id="liquid-cargo-bay" className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md text-black text-sm" />
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-sm text-gray-700 flex-1">Gas Cargo Bay (2000 kg each)</label>
-                                        <input type="number" min="0" defaultValue="0" id="gas-cargo-bay" className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md text-black text-sm" />
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-sm text-gray-700 flex-1">Sightseeing (200 kg each)</label>
-                                        <input type="number" min="0" defaultValue="0" id="sightseeing" className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md text-black text-sm" />
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-sm text-gray-700 flex-1">Research Station (200 kg each)</label>
-                                        <input type="number" min="0" defaultValue="0" id="research-station" className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md text-black text-sm" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Middle Column - Results */}
-                        <div className="space-y-6">
-                            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Results</h2>
-                            
-                            <div id="results-container" className="space-y-4">
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                    <h3 className="text-lg font-medium text-gray-800 mb-2">Rocket Specifications</h3>
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Total Weight:</span>
-                                            <span id="total-weight" className="font-medium text-gray-900">-</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Fuel Tanks Needed:</span>
-                                            <span id="fuel-tanks" className="font-medium text-gray-900">-</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Oxidizer Tanks Needed:</span>
-                                            <span id="oxidizer-tanks" className="font-medium text-gray-900">-</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="bg-blue-50 p-4 rounded-lg">
-                                    <h3 className="text-lg font-medium text-blue-800 mb-2">Performance</h3>
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-blue-600">Viable Distance:</span>
-                                            <span id="viable-distance" className="font-bold text-blue-900 text-lg">-</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                    <h3 className="text-lg font-medium text-gray-800 mb-2">Weight Breakdown</h3>
-                                    <div id="weight-breakdown" className="space-y-2 text-sm">
-                                        {/* Will be populated by PyScript */}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Right Column - Chart */}
-                        <div className="space-y-6">
-                            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Fuel vs Distance Chart</h2>
-                            <div id="chart-container" className="bg-gray-50 rounded-lg p-4">
-                                <div id="chart" className="w-full h-80 bg-white rounded border">
-                                    {/* Chart will be generated by PyScript */}
-                                </div>
-                                <div className="mt-4 text-sm text-gray-600">
-                                    <p>• Blue line shows viable distance</p>
-                                    <p>• Current fuel amount is highlighted</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* PyScript Configuration */}
-                <py-config>
-                    {`
-packages = ["matplotlib", "numpy"]
-                    `}
-                </py-config>
-
-                {/* PyScript Code */}
-                <py-script>
-                    {`
 import math
-from js import document, console, setInterval
+from js import document, console, setTimeout
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
@@ -331,36 +188,164 @@ def generate_chart(fuel_type, oxidizer_type, component_quantities, current_fuel)
             distance = calculate_viable_distance(fuel_type, oxidizer_type, weight, fuel)
             distances.append(max(0, distance))
         
-        # Create matplotlib chart
-        plt.figure(figsize=(8, 5))
-        plt.plot(fuel_range, distances, 'b-', linewidth=2, label='Viable Distance')
-        plt.axvline(x=current_fuel, color='g', linestyle='--', linewidth=2, label=f'Current ({current_fuel} kg)')
+        # Create Chart.js interactive chart
+        chart_html = f"""
+        <div class="relative">
+            <canvas id="fuel-distance-chart" width="800" height="400" class="w-full"></canvas>
+        </div>
         
-        plt.xlabel('Fuel Amount (kg)')
-        plt.ylabel('Distance (km)')
-        plt.title('Fuel Amount vs Viable Distance')
-        plt.grid(True, alpha=0.3)
-        plt.legend()
+        <script>
+        (function() {{
+            // Wait for Chart.js to be available
+            if (typeof Chart === 'undefined') {{
+                setTimeout(arguments.callee, 100);
+                return;
+            }}
+            
+            const ctx = document.getElementById('fuel-distance-chart');
+            if (!ctx) return;
+            
+            const context = ctx.getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (window.fuelChart) {{
+                window.fuelChart.destroy();
+            }}
+            
+            const fuelData = {fuel_range};
+            const distanceData = {distances};
+            const currentFuel = {current_fuel};
+            
+            // Create datasets
+            const chartData = fuelData.map((fuel, index) => ({{
+                x: fuel,
+                y: distanceData[index]
+            }}));
+            
+            window.fuelChart = new Chart(context, {{
+                type: 'line',
+                data: {{
+                    datasets: [{{
+                        label: 'Viable Distance',
+                        data: chartData,
+                        borderColor: 'rgb(37, 99, 235)',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: 'rgb(37, 99, 235)',
+                        pointBorderColor: 'rgb(37, 99, 235)',
+                        pointRadius: 4,
+                        pointHoverRadius: 8,
+                        tension: 0.1,
+                        fill: false
+                    }}, {{
+                        label: 'Current Fuel',
+                        data: [{{x: currentFuel, y: 0}}, {{x: currentFuel, y: Math.max(...distanceData)}}],
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0
+                    }}]
+                }},
+                options: {{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {{
+                        intersect: false,
+                        mode: 'index'
+                    }},
+                    plugins: {{
+                        title: {{
+                            display: true,
+                            text: 'Fuel Amount vs Viable Distance',
+                            font: {{
+                                size: 18,
+                                weight: 'bold'
+                            }}
+                        }},
+                        legend: {{
+                            display: true,
+                            position: 'top'
+                        }},
+                        tooltip: {{
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            callbacks: {{
+                                label: function(context) {{
+                                    if (context.datasetIndex === 0) {{
+                                        return 'Fuel: ' + context.parsed.x.toLocaleString() + ' kg, Distance: ' + Math.round(context.parsed.y).toLocaleString() + ' km';
+                                    }}
+                                    return null;
+                                }},
+                                title: function(context) {{
+                                    return 'Rocket Performance';
+                                }}
+                            }}
+                        }}
+                    }},
+                    scales: {{
+                        x: {{
+                            type: 'linear',
+                            display: true,
+                            title: {{
+                                display: true,
+                                text: 'Fuel Amount (kg)',
+                                font: {{
+                                    size: 14,
+                                    weight: 'bold'
+                                }}
+                            }},
+                            ticks: {{
+                                callback: function(value) {{
+                                    return value.toLocaleString();
+                                }}
+                            }},
+                            grid: {{
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }}
+                        }},
+                        y: {{
+                            type: 'linear',
+                            display: true,
+                            title: {{
+                                display: true,
+                                text: 'Distance (km)',
+                                font: {{
+                                    size: 14,
+                                    weight: 'bold'
+                                }}
+                            }},
+                            ticks: {{
+                                callback: function(value) {{
+                                    return Math.round(value).toLocaleString();
+                                }}
+                            }},
+                            grid: {{
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }}
+                        }}
+                    }}
+                }}
+            }});
+        }})();
+        </script>
+        """
         
-        # Convert plot to base64 image
-        buffer = io.BytesIO()
-        plt.savefig(buffer, format='png', bbox_inches='tight', dpi=100)
-        buffer.seek(0)
-        image_base64 = base64.b64encode(buffer.getvalue()).decode()
-        plt.close()
-        
-        # Display chart
-        chart_html = f'<img src="data:image/png;base64,{image_base64}" class="w-full h-auto">'
         document.getElementById("chart").innerHTML = chart_html
         
     except Exception as e:
         console.log(f"Error generating chart: {e}")
-        document.getElementById("chart").innerHTML = f'<div class="text-red-500">Chart error: {e}</div>'
+        document.getElementById("chart").innerHTML = f'<div class="text-red-500 p-4">Chart error: {e}</div>'
 
 # Add event listeners to all inputs
 def setup_listeners():
     try:
-        # Create proxy for event handling (moved here to ensure function is defined)
+        # Create proxy for event handling
         update_proxy = create_proxy(update_results)
         
         inputs = ["fuel-amount", "fuel-type", "oxidizer-type", "cargo-bay", 
@@ -387,8 +372,165 @@ def initialize():
 
 # Run initialization
 initialize()
-                    `}
-                </py-script>
+            `;
+            document.body.appendChild(pyScript);
+        };
+
+        // Wait for PyScript to be available, then initialize
+        setTimeout(initializePyScript, 1000);
+
+        return () => {
+            // Cleanup
+            document.head.removeChild(pyScriptCSS);
+            document.head.removeChild(pyScriptJS);
+            document.head.removeChild(chartJS);
+        };
+    }, []);
+
+    return (
+        <div className="min-h-screen bg-gray-50 py-8">
+            <div className="max-w-6xl mx-auto px-4">
+                <h1 className="text-4xl font-bold text-center mb-8 text-gray-900">ONI Rocket Calculator</h1>
+                
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Left Column - Inputs */}
+                        <div className="space-y-6">
+                            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Rocket Configuration</h2>
+                            
+                            {/* Fuel Amount */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Amount of Fuel (kg)
+                                </label>
+                                <input
+                                    type="number"
+                                    id="fuel-amount"
+                                    defaultValue="1000"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black"
+                                    placeholder="Enter amount of fuel"
+                                />
+                            </div>
+
+                            {/* Fuel Type */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Fuel Type
+                                </label>
+                                <select
+                                    id="fuel-type"
+                                    defaultValue="petroleum"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black"
+                                >
+                                    <option value="steam">Steam (20 km/kg)</option>
+                                    <option value="petroleum">Petroleum (40 km/kg)</option>
+                                    <option value="liquid_hydrogen">Liquid Hydrogen (60 km/kg)</option>
+                                </select>
+                            </div>
+
+                            {/* Oxidizer Type */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Oxidizer Type
+                                </label>
+                                <select
+                                    id="oxidizer-type"
+                                    defaultValue="liquid_oxygen"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black"
+                                >
+                                    <option value="oxylite">Oxylite (100% efficiency)</option>
+                                    <option value="liquid_oxygen">Liquid Oxygen (133% efficiency)</option>
+                                </select>
+                            </div>
+
+                            {/* Extra Components */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Extra Modules (Quantity)
+                                </label>
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm text-gray-700 flex-1">Cargo Bay (2000 kg each)</label>
+                                        <input type="number" min="0" defaultValue="0" id="cargo-bay" className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md text-black text-sm" />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm text-gray-700 flex-1">Liquid Cargo Bay (2000 kg each)</label>
+                                        <input type="number" min="0" defaultValue="0" id="liquid-cargo-bay" className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md text-black text-sm" />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm text-gray-700 flex-1">Gas Cargo Bay (2000 kg each)</label>
+                                        <input type="number" min="0" defaultValue="0" id="gas-cargo-bay" className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md text-black text-sm" />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm text-gray-700 flex-1">Sightseeing (200 kg each)</label>
+                                        <input type="number" min="0" defaultValue="0" id="sightseeing" className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md text-black text-sm" />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm text-gray-700 flex-1">Research Station (200 kg each)</label>
+                                        <input type="number" min="0" defaultValue="0" id="research-station" className="w-20 px-2 py-1 text-center border border-gray-300 rounded-md text-black text-sm" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Middle Column - Results */}
+                        <div className="space-y-6">
+                            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Results</h2>
+                            
+                            <div id="results-container" className="space-y-4">
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                    <h3 className="text-lg font-medium text-gray-800 mb-2">Rocket Specifications</h3>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Total Weight:</span>
+                                            <span id="total-weight" className="font-medium text-gray-900">Loading...</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Fuel Tanks Needed:</span>
+                                            <span id="fuel-tanks" className="font-medium text-gray-900">-</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Oxidizer Tanks Needed:</span>
+                                            <span id="oxidizer-tanks" className="font-medium text-gray-900">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-blue-50 p-4 rounded-lg">
+                                    <h3 className="text-lg font-medium text-blue-800 mb-2">Performance</h3>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-blue-600">Viable Distance:</span>
+                                            <span id="viable-distance" className="font-bold text-blue-900 text-lg">Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                    <h3 className="text-lg font-medium text-gray-800 mb-2">Weight Breakdown</h3>
+                                    <div id="weight-breakdown" className="space-y-2 text-sm">
+                                        {/* Will be populated by PyScript */}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Column - Chart */}
+                        <div className="space-y-6">
+                            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Fuel vs Distance Chart</h2>
+                            <div id="chart-container" className="bg-gray-50 rounded-lg p-4">
+                                <div id="chart" className="w-full h-80 bg-white rounded border flex items-center justify-center">
+                                    <span className="text-gray-500">Loading chart...</span>
+                                </div>
+                                <div className="mt-4 text-sm text-gray-600">
+                                    <p>• Hover over data points to see exact values</p>
+                                    <p>• Blue line shows viable distance for each fuel amount</p>
+                                    <p>• Green dashed line shows your current fuel amount</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
