@@ -59,70 +59,65 @@ export default function Calculator() {
                             y: distanceData[index]
                         }));
                         
+                        // Get only points that represent valid graph drawing.
+                        // Filter chartData to remove repeating 0 y-values at the start, keeping only the last 0 before it goes up.
+                        let firstNonZeroIndex = chartData.findIndex(d => d.y > 0);
+                        let displayData = chartData;
+
+                        if (firstNonZeroIndex > 0) {
+                            displayData = chartData.slice(firstNonZeroIndex - 1);
+                        } else if (firstNonZeroIndex === -1) {
+                            // all zeroes
+                            displayData = [chartData[0], chartData[chartData.length - 1]];
+                        }
+
+                        // Set the chart area background color
+                        const plugin = {
+                          id: 'customCanvasBackgroundColor',
+                          beforeDraw: (chart, args, options) => {
+                            const {ctx} = chart;
+                            ctx.save();
+                            ctx.globalCompositeOperation = 'destination-over';
+                            ctx.fillStyle = options.color || '#1b1b30';
+                            ctx.fillRect(0, 0, chart.width, chart.height);
+                            ctx.restore();
+                          }
+                        };
+
                         window.fuelChart = new Chart(context, {
                             type: 'line',
                             data: {
                                 datasets: [{
                                     label: 'Viable Distance',
-                                    data: chartData,
-                                    borderColor: 'rgb(37, 99, 235)',
-                                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                                    borderWidth: 3,
-                                    pointBackgroundColor: 'rgb(37, 99, 235)',
-                                    pointBorderColor: 'rgb(37, 99, 235)',
-                                    pointRadius: 4,
-                                    pointHoverRadius: 8,
-                                    tension: 0.1,
-                                    fill: false
-                                }, {
-                                    label: 'Current Fuel',
-                                    data: [{x: currentFuel, y: 0}, {x: currentFuel, y: Math.max(...distanceData)}],
-                                    borderColor: 'rgb(34, 197, 94)',
-                                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                                    data: displayData,
+                                    borderColor: 'rgb(193, 54, 124)',
+                                    backgroundColor: 'transparent',
                                     borderWidth: 2,
-                                    borderDash: [5, 5],
                                     pointRadius: 0,
-                                    fill: false,
-                                    tension: 0
+                                    pointHoverRadius: 0,
+                                    tension: 0,
+                                    fill: false
                                 }]
                             },
+                            plugins: [plugin],
                             options: {
                                 responsive: true,
                                 maintainAspectRatio: false,
-                                interaction: {
-                                    intersect: false,
-                                    mode: 'index'
+                                layout: {
+                                    padding: 0
                                 },
                                 plugins: {
+                                    customCanvasBackgroundColor: {
+                                        color: '#1b1b30',
+                                    },
                                     title: {
-                                        display: true,
-                                        text: 'Fuel Amount vs Viable Distance',
-                                        font: {
-                                            size: 18,
-                                            weight: 'bold'
-                                        }
+                                        display: false
                                     },
                                     legend: {
-                                        display: true,
-                                        position: 'top'
+                                        display: false
                                     },
                                     tooltip: {
-                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                        titleColor: 'white',
-                                        bodyColor: 'white',
-                                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                                        borderWidth: 1,
-                                        callbacks: {
-                                            label: function(context) {
-                                                if (context.datasetIndex === 0) {
-                                                    return 'Fuel: ' + context.parsed.x.toLocaleString() + ' kg, Distance: ' + Math.round(context.parsed.y).toLocaleString() + ' km';
-                                                }
-                                                return null;
-                                            },
-                                            title: function(context) {
-                                                return 'Rocket Performance';
-                                            }
-                                        }
+                                        enabled: false // disable tooltips to match reference image
                                     }
                                 },
                                 scales: {
@@ -131,40 +126,42 @@ export default function Calculator() {
                                         display: true,
                                         title: {
                                             display: true,
-                                            text: 'Fuel Amount (kg)',
+                                            text: 'Fuel (kg)',
+                                            color: '#492f49',
                                             font: {
-                                                size: 14,
-                                                weight: 'bold'
+                                                size: 14
                                             }
                                         },
                                         ticks: {
+                                            color: '#666666',
                                             callback: function(value) {
                                                 return value.toLocaleString();
                                             }
                                         },
                                         grid: {
-                                            color: 'rgba(0, 0, 0, 0.1)'
+                                            display: false, // No vertical grid lines in reference
+                                            drawBorder: true,
+                                            color: '#492f49'
                                         }
                                     },
                                     y: {
                                         type: 'linear',
                                         display: true,
                                         title: {
-                                            display: true,
-                                            text: 'Distance (km)',
-                                            font: {
-                                                size: 14,
-                                                weight: 'bold'
-                                            }
+                                            display: false
                                         },
                                         ticks: {
+                                            color: '#666666',
                                             callback: function(value) {
                                                 return Math.round(value).toLocaleString();
                                             }
                                         },
                                         grid: {
-                                            color: 'rgba(0, 0, 0, 0.1)'
-                                        }
+                                            display: true,
+                                            drawBorder: true,
+                                            color: '#492f49'
+                                        },
+                                        min: 0
                                     }
                                 }
                             }
@@ -519,14 +516,12 @@ initialize()
                         {/* Right Column - Chart */}
                         <div className="space-y-6">
                             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Fuel vs Distance Chart</h2>
-                            <div id="chart-container" className="bg-gray-50 rounded-lg p-4">
-                                <div id="chart" className="w-full h-80 bg-white rounded border flex items-center justify-center">
+                            <div id="chart-container" className="bg-[#1b1b30] rounded p-4">
+                                <div id="chart" className="w-full h-80 bg-[#1b1b30] flex items-center justify-center border border-[#492f49]">
                                     <span className="text-gray-500">Loading chart...</span>
                                 </div>
-                                <div className="mt-4 text-sm text-gray-600">
-                                    <p>• Hover over data points to see exact values</p>
-                                    <p>• Blue line shows viable distance for each fuel amount</p>
-                                    <p>• Green dashed line shows your current fuel amount</p>
+                                <div className="mt-4 text-sm text-gray-400">
+                                    <p>• Pink line shows viable distance for each fuel amount (kg)</p>
                                 </div>
                             </div>
                         </div>
